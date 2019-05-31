@@ -42,10 +42,12 @@ int main(int argc, char** argv)
     n.getParam("dataset_folder", dataset_folder);
     n.getParam("sequence_number", sequence_number);
     std::cout << "Reading sequence " << sequence_number << " from " << dataset_folder << '\n';
+
     bool to_bag;
     n.getParam("to_bag", to_bag);
     if (to_bag)
         n.getParam("output_bag_file", output_bag_file);
+
     int publish_delay;
     n.getParam("publish_delay", publish_delay);
     publish_delay = publish_delay <= 0 ? 1 : publish_delay;
@@ -74,7 +76,7 @@ int main(int argc, char** argv)
     rosbag::Bag bag_out;
     if (to_bag)
         bag_out.open(output_bag_file, rosbag::bagmode::Write);
-    
+
     Eigen::Matrix3d R_transform;
     R_transform << 0, 0, 1, -1, 0, 0, 0, -1, 0;
     Eigen::Quaterniond q_transform(R_transform);
@@ -83,12 +85,14 @@ int main(int argc, char** argv)
     std::size_t line_num = 0;
 
     ros::Rate r(10.0 / publish_delay);
-    while (std::getline(timestamp_file, line) && ros::ok())
+    while( std::getline(timestamp_file, line) && ros::ok() )
     {
         float timestamp = stof(line);
         std::stringstream left_image_path, right_image_path;
+
         left_image_path << dataset_folder << "sequences/" + sequence_number + "/image_0/" << std::setfill('0') << std::setw(6) << line_num << ".png";
         cv::Mat left_image = cv::imread(left_image_path.str(), CV_LOAD_IMAGE_GRAYSCALE);
+
         right_image_path << dataset_folder << "sequences/" + sequence_number + "/image_1/" << std::setfill('0') << std::setw(6) << line_num << ".png";
         cv::Mat right_image = cv::imread(left_image_path.str(), CV_LOAD_IMAGE_GRAYSCALE);
 
@@ -129,7 +133,7 @@ int main(int argc, char** argv)
 
         // read lidar point cloud
         std::stringstream lidar_data_path;
-        lidar_data_path << dataset_folder << "velodyne/sequences/" + sequence_number + "/velodyne/" 
+        lidar_data_path << dataset_folder << "velodyne/sequences/" + sequence_number + "/velodyne/"
                         << std::setfill('0') << std::setw(6) << line_num << ".bin";
         std::vector<float> lidar_data = read_lidar_data(lidar_data_path.str());
         std::cout << "totally " << lidar_data.size() / 4.0 << " points in this lidar frame \n";
@@ -138,7 +142,7 @@ int main(int argc, char** argv)
         std::vector<float> lidar_intensities;
         pcl::PointCloud<pcl::PointXYZI> laser_cloud;
         for (std::size_t i = 0; i < lidar_data.size(); i += 4)
-        {
+        {   //# x,y,z, intensity
             lidar_points.emplace_back(lidar_data[i], lidar_data[i+1], lidar_data[i+2]);
             lidar_intensities.push_back(lidar_data[i+3]);
 
